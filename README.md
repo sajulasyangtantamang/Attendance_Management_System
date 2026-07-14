@@ -50,3 +50,4 @@ Visit `http://localhost:8000`.
 - `composer.json` includes `barryvdh/laravel-dompdf` and `maatwebsite/excel` as dependencies for when you add PDF/Excel export — they aren't wired into any controller yet.
 - Add a default avatar image at `public/images/default-avatar.png` (referenced by `User::photoUrl()`).
 # Student-Attendance-management-system
+# Student-Attendance-management-system
