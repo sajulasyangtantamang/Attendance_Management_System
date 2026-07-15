@@ -1,0 +1,23 @@
+body {
+    background-color: #f4f6f9;
+}
+
+.card {
+    border-radius: 0.75rem;
+}
+
+.app-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.table thead th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+}
+
+.btn {
+    border-radius: 0.5rem;
+}
