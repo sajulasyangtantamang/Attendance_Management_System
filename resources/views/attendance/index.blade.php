@@ -99,9 +99,12 @@
                 @forelse ($sessions as $session)
                     <tr>
                         <td>{{ $session->date->format('M d, Y') }}</td>
-                        <td>{{ $session->classRoom->name }} {{ $session->classRoom->section }}</td>
-                        <td>{{ $session->subject->name ?? '-' }}</td>
-                        <td>{{ $session->teacher->name }}</td>
+                        <td>
+                            {{ optional($session->classroom)->name ?? 'N/A' }}
+                            {{optional($session->classroom)->section ?? 'N/A' }}
+                        </td>
+                        <td>{{ optional($session->subject)->name ?? 'N/A' }}</td>
+                        <td>{{ optional($session->teacher)->name ?? 'N/A' }}</td>
                         <td>{{ $session->details()->count() }}</td>
                         <td>
                             @if (auth()->user()->isAdmin())
