@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'student' => \App\Http\Middleware\StudentMiddleware::class,
         ]);
 
+        // Runs on every web request; no-ops for guests and only intervenes
+        // for a logged-in user who still has a pending forced password change.
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsurePasswordIsChanged::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -47,6 +47,7 @@ class PasswordResetController extends Controller
                 $user->forceFill([
                     'password' => bcrypt($password),
                     'remember_token' => Str::random(60),
+                    'must_change_password' => false,
                 ])->save();
             }
         );

@@ -2,6 +2,12 @@
 @section('title', 'My Profile')
 
 @section('content')
+@if ($user->must_change_password)
+    <div class="alert alert-warning">
+        <strong>Password change required:</strong> Please set a new password below before you can use the rest of the system.
+    </div>
+@endif
+
 <div class="row g-3">
     <div class="col-md-6">
         <div class="card border-0 shadow-sm">

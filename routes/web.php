@@ -10,6 +10,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,7 @@ Route::middleware('auth')->group(function () {
 */
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [AdminDashboardController::class, 'chartData'])->name('dashboard.chart-data');
     Route::resource('students', StudentController::class);
     Route::resource('teachers', TeacherController::class)->except(['show']);
     Route::resource('departments', DepartmentController::class)->except(['show']);
@@ -67,6 +69,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 */
 Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [TeacherDashboardController::class, 'chartData'])->name('dashboard.chart-data');
 });
 
 /*
@@ -76,6 +79,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 */
 Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [StudentDashboardController::class, 'chartData'])->name('dashboard.chart-data');
 });
 
 /*
@@ -89,4 +93,11 @@ Route::middleware(['auth', 'teacher'])->prefix('attendance')->name('attendance.'
     Route::post('/take', [AttendanceController::class, 'take'])->name('take');
     Route::post('/store', [AttendanceController::class, 'store'])->name('store');
     Route::delete('/{attendance}', [AttendanceController::class, 'destroy'])->name('destroy');
+
+    // Attendance Summary report (per-student %, highlighted below threshold):
+    // self-scoped in ReportController, so admins get every filter and
+    // teachers are locked to their own class regardless of query params.
+    Route::get('/summary-data', [ReportController::class, 'summaryData'])->name('summary-data');
+    Route::get('/summary/pdf', [ReportController::class, 'summaryPdf'])->name('summary-pdf');
+    Route::get('/summary/excel', [ReportController::class, 'summaryExcel'])->name('summary-excel');
 });

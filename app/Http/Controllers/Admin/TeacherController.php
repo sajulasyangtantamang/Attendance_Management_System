@@ -8,9 +8,11 @@ use App\Models\Role;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Notifications\AccountCreated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class TeacherController extends Controller
 {
@@ -42,7 +44,6 @@ class TeacherController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
             'employee_id' => 'required|string|unique:teachers,employee_id',
             'department_id' => 'nullable|exists:departments,id',
             'designation' => 'nullable|string|max:255',
@@ -51,14 +52,17 @@ class TeacherController extends Controller
             'subjects.*' => 'exists:subjects,id',
         ]);
 
-        DB::transaction(function () use ($data) {
+        $defaultPassword = config('accounts.default_password');
+
+        $user = DB::transaction(function () use ($data, $defaultPassword) {
             $teacherRole = Role::firstOrCreate(['name' => 'teacher'], ['label' => 'Teacher']);
 
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => Hash::make($defaultPassword),
                 'role_id' => $teacherRole->id,
+                'must_change_password' => true,
             ]);
 
             $teacher = Teacher::create([
@@ -71,7 +75,18 @@ class TeacherController extends Controller
             ]);
 
             $teacher->subjects()->sync($data['subjects'] ?? []);
+
+            return $user;
         });
+
+        try {
+            $user->notify(new AccountCreated('Teacher', $defaultPassword));
+        } catch (\Throwable $e) {
+            Log::error('Failed to send teacher account-creation email: '.$e->getMessage());
+
+            return redirect()->route('admin.teachers.index')
+                ->with('warning', 'Teacher added, but the account-creation email could not be sent.');
+        }
 
         return redirect()->route('admin.teachers.index')->with('success', 'Teacher added successfully.');
     }

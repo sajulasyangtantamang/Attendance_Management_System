@@ -9,6 +9,8 @@ use App\Models\ClassRoom;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Support\AttendanceChartData;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
@@ -36,9 +38,36 @@ class DashboardController extends Controller
         $recentAttendance = Attendance::with(['classRoom', 'subject', 'teacher'])
             ->latest('date')->take(8)->get();
 
+        $teachers = Teacher::with('user')->get();
+
         return view('admin.dashboard', compact(
             'totalStudents', 'totalTeachers', 'totalClasses', 'totalSubjects',
-            'todayPercentage', 'monthPercentage', 'recentAttendance'
+            'todayPercentage', 'monthPercentage', 'recentAttendance', 'teachers'
         ));
+    }
+
+    /**
+     * JSON feed behind the dashboard's Chart.js widgets, sliced by month and
+     * (optionally) by teacher.
+     */
+    public function chartData(Request $request)
+    {
+        $request->validate([
+            'month' => 'nullable|date_format:Y-m',
+            'teacher_id' => 'nullable|exists:users,id',
+        ]);
+
+        [$start, $end] = AttendanceChartData::resolveMonthRange($request->input('month'));
+
+        $sessions = Attendance::with(['details', 'classRoom'])
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->when($request->filled('teacher_id'), fn ($q) => $q->where('teacher_id', $request->input('teacher_id')))
+            ->get();
+
+        return response()->json([
+            'trend' => AttendanceChartData::dailyTrend($sessions),
+            'status' => AttendanceChartData::statusBreakdown($sessions),
+            'classes' => AttendanceChartData::classBreakdown($sessions),
+        ]);
     }
 }

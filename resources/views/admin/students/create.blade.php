@@ -5,6 +5,10 @@
 <div class="card border-0 shadow-sm">
     <div class="card-body">
         <h5 class="mb-3">Add New Student</h5>
+        <div class="alert alert-info">
+            New accounts are created with the default password (<strong>{{ config('accounts.default_password') }}</strong>),
+            which is emailed to the student. They will be required to set their own password on first login.
+        </div>
         <form method="POST" action="{{ route('admin.students.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="row g-3">
@@ -15,10 +19,6 @@
                 <div class="col-md-6">
                     <label class="form-label">Email</label>
                     <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Roll Number</label>

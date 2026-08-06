@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\AttendanceDetail;
 use App\Models\ClassRoom;
 use App\Models\Subject;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -98,8 +99,9 @@ class AttendanceController extends Controller
 
         $sessions = $query->latest('date')->paginate(20)->withQueryString();
         $classes = ClassRoom::all();
+        $teachers = $request->user()->isAdmin() ? Teacher::with('user')->get() : collect();
 
-        return view('attendance.index', compact('sessions', 'classes'));
+        return view('attendance.index', compact('sessions', 'classes', 'teachers'));
     }
 
     public function destroy(Attendance $attendance)

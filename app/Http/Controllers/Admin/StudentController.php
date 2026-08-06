@@ -8,9 +8,11 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\AccountCreated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
@@ -49,7 +51,6 @@ class StudentController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
             'roll_number' => 'required|string|unique:students,roll_number',
             'class_id' => 'nullable|exists:classes,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -60,7 +61,9 @@ class StudentController extends Controller
             'photo' => 'nullable|image|max:2048',
         ]);
 
-        DB::transaction(function () use ($data, $request) {
+        $defaultPassword = config('accounts.default_password');
+
+        $user = DB::transaction(function () use ($data, $request, $defaultPassword) {
             $studentRole = Role::firstOrCreate(['name' => 'student'], ['label' => 'Student']);
 
             $photoPath = $request->hasFile('photo')
@@ -70,9 +73,10 @@ class StudentController extends Controller
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => Hash::make($defaultPassword),
                 'role_id' => $studentRole->id,
                 'photo' => $photoPath,
+                'must_change_password' => true,
             ]);
 
             Student::create([
@@ -86,7 +90,18 @@ class StudentController extends Controller
                 'address' => $data['address'] ?? null,
                 'admission_date' => now(),
             ]);
+
+            return $user;
         });
+
+        try {
+            $user->notify(new AccountCreated('Student', $defaultPassword));
+        } catch (\Throwable $e) {
+            Log::error('Failed to send student account-creation email: '.$e->getMessage());
+
+            return redirect()->route('admin.students.index')
+                ->with('warning', 'Student added, but the account-creation email could not be sent.');
+        }
 
         return redirect()->route('admin.students.index')->with('success', 'Student added successfully.');
     }
